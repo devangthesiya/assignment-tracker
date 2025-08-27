@@ -1,8 +1,11 @@
+import { PostsProvider } from './context/PostsContext';
+import { Feed } from './components/Feed';
+
 function App() {
   return (
-    <>
-      <div className="text-3xl text-red-600 ">Hello World</div>
-    </>
+    <PostsProvider>
+      <Feed />
+    </PostsProvider>
   );
 }
 
