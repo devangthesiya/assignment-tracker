@@ -9,6 +9,8 @@ A modern social media feed built with React, TypeScript, Tailwind CSS, and Fireb
 - 💬 **Real-time Comments** - Live comment updates that sync instantly
 - 🔥 **Firebase Firestore** - Cloud database with real-time listeners
 - ⚡ **Skeleton Loading** - Professional loading states with smooth animations
+- 🌙 **Dark Mode** - Beautiful dark/light theme toggle with system preference detection
+- 🎭 **Multi-User System** - 10 unique users with session-based assignment
 - 🌐 **Cross-Session Sync** - Changes appear instantly in all open browser windows
 - 💾 **Cloud Persistence** - Data stored securely in Firebase
 
@@ -64,14 +66,18 @@ service cloud.firestore {
 2. **Like Posts** - Click the ❤️ icon to like/unlike (syncs globally in real-time)
 3. **View Comments** - Click "View all X comments" to expand comment threads
 4. **Add Comments** - Click comment icon, type, and press Enter
-5. **Test Real-time Sync** - Open multiple browser windows to see live updates!
+5. **Toggle Dark Mode** - Click the 🌙/☀️ button in the header to switch themes
+6. **Test Multi-User Experience** - Open multiple browser windows(incognito) to simulate different users!
 
-### Mock User System
+### Multi-User Session System 🎭
 
-- All users share the same mock account: **Guest User (u123)**
-- This simulates a single-user experience while demonstrating global data sync
-- Likes and comments from any browser window appear instantly in all other windows
-- Perfect for testing real-time Firestore synchronization
+- **10 Fun Users**: Each browser session gets assigned a unique user from a pool of creative usernames:
+  - CoffeeLover42 ☕ | PixelNinja 🥷 | SunflowerDream 🌻 | MidnightCoder 🌙 | BubbleWrap99 💭
+  - WanderlustSoul 🌍 | NeonVibez 💫 | CloudHopper ☁️ | StarGazer21 ⭐ | RetroWave88 🌊
+- **Session-Based**: Each browser window/tab gets a different user automatically
+- **Real-time Sync**: Likes and comments from different "users" appear instantly across all windows
+- **Unique Avatars**: Each user has their own profile picture and personality
+- **Perfect for Testing**: Simulate a real social media experience with multiple users
 
 ## 🏗️ Tech Stack
 
@@ -90,24 +96,30 @@ src/
 │   ├── Feed.tsx          # Main feed container with skeleton loading
 │   ├── PostCard.tsx      # Individual post component
 │   ├── PostSkeleton.tsx  # Loading skeleton components
+│   ├── DarkModeToggle.tsx # Dark/light mode toggle button
 │   └── index.ts          # Component exports
 ├── context/
-│   └── PostsContext.tsx  # Global state management with Firestore
+│   ├── PostsContext.tsx  # Global state management with Firestore
+│   └── ThemeContext.tsx  # Dark mode theme management
 ├── firebase/
 │   ├── config.ts         # Firebase configuration
-│   └── posts.ts          # Firestore operations for posts, likes, comments
+│   ├── posts.ts          # Firestore operations for posts, likes, comments
+│   └── credentials.ts    # Firebase credentials (gitignored)
+├── utils/
+│   └── userManager.ts    # Multi-user session management
 ├── App.tsx               # Root component
 ├── main.tsx              # React entry point
-└── index.css             # Global styles
+└── index.css             # Global styles with Tailwind
 ```
 
 ## 🎯 Current Features
 
 - ✅ **5 Sample Posts** - Realistic content stored in Firestore
-- ✅ **Mock User System** - Single Guest User (u123) for testing
+- ✅ **Multi-User System** - 10 unique users with automatic session assignment
 - ✅ **Real-time Synchronization** - Instant updates across all browser sessions
 - ✅ **Global Likes** - Like counts sync globally via Firestore
 - ✅ **Global Comments** - Comments appear instantly for all users
+- ✅ **Dark/Light Mode** - Theme toggle with smooth animations and persistence
 - ✅ **Skeleton Loading** - Professional loading states while fetching data
 - ✅ **Optimistic Updates** - Immediate UI feedback with error handling
 - ✅ **Clean UI** - Instagram-inspired mobile-first design

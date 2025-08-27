@@ -77,7 +77,6 @@ export const initializePost = async (post: FirestorePost): Promise<void> => {
       });
     }
     
-    console.log('Post initialized in Firestore:', post.id);
   } catch (error) {
     console.error('Error initializing post:', error);
     throw error;
@@ -168,7 +167,6 @@ export const addPostComment = async (
       });
     }
     
-    console.log('Comment added:', newComment);
     return newComment;
   } catch (error) {
     console.error('Error adding comment:', error);

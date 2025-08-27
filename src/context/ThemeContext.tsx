@@ -33,7 +33,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       document.body.classList.remove('dark');
     }
     
-    console.log('Theme loaded:', shouldBeDark ? 'dark' : 'light', 'HTML classes:', document.documentElement.classList.toString());
   }, []);
 
   const toggleDarkMode = () => {
@@ -50,7 +49,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       localStorage.setItem('theme', 'light');
     }
     
-    console.log('Theme toggled to:', newDarkMode ? 'dark' : 'light', 'HTML classes:', document.documentElement.classList.toString());
   };
 
   const value: ThemeContextType = {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { usePosts } from "../context/PostsContext";
 
-interface SimplePost {
+interface Post {
   id: string;
   authorId: string;
   authorName: string;
@@ -22,11 +22,11 @@ interface SimplePost {
 }
 
 interface PostCardProps {
-  post: SimplePost;
+  post: Post;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post }) => {
-  const { toggleLike, addComment } = usePosts();
+  const { toggleLike, addComment, currentUser } = usePosts();
   const [showComments, setShowComments] = useState(false);
   const [showAddComment, setShowAddComment] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -201,7 +201,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           <span className="font-semibold text-sm text-gray-900 dark:text-white mr-2">
             {post.authorName}
           </span>
-          <span className="text-sm text-gray-900 dark:text-gray-200">{post.caption}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-200">
+            {post.caption}
+          </span>
         </div>
 
         {/* Comments Preview */}
@@ -250,8 +252,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         {showAddComment && (
           <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
             <img
-              src="https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg"
-              alt="Your avatar"
+              src={currentUser.avatar}
+              alt={currentUser.username}
               className="w-6 h-6 rounded-full object-cover"
             />
             <div className="flex-1 flex items-center space-x-2">
