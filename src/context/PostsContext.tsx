@@ -1,5 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { 
+  initializePost, 
+  togglePostLike, 
+  addPostComment, 
+  getPostLikes, 
+  getPostComments,
+  subscribeToPostLikes,
+  subscribeToPostComments,
+  type FirestorePost
+} from '../firebase/posts';
 
 interface SimpleComment {
   id: string;
@@ -25,9 +35,10 @@ interface SimplePost {
 
 interface PostsContextType {
   posts: SimplePost[];
-  toggleLike: (postId: string) => void;
-  addComment: (postId: string, text: string) => void;
+  toggleLike: (postId: string) => Promise<void>;
+  addComment: (postId: string, text: string) => Promise<void>;
   error: string | null;
+  loading: boolean;
 }
 
 const PostsContext = createContext<PostsContextType | null>(null);
@@ -39,6 +50,7 @@ interface PostsProviderProps {
 export const PostsProvider: React.FC<PostsProviderProps> = ({ children }) => {
   const [posts, setPosts] = useState<SimplePost[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
   
   // Mock guest user - everyone uses this
   const mockUser = {
@@ -48,205 +60,261 @@ export const PostsProvider: React.FC<PostsProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Load mock posts immediately
-    const mockPosts: SimplePost[] = [
-      {
-        id: 'p1',
-        authorId: 'sample_user_1',
-        authorName: 'Alice Smith',
-        authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-        imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
-        caption: 'Beautiful sunset from my balcony! Nature never fails to amaze me 🌅',
-        likes: ['u123', 'u789', 'u101'],
-        comments: [
-          {
-            id: 'c1',
-            userId: 'u123',
-            userName: 'John Doe',
-            userAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-            text: 'Absolutely stunning! Great shot 📸',
-            timestamp: '2025-08-15T10:30:00Z'
-          },
-          {
-            id: 'c2',
-            userId: 'u789',
-            userName: 'Bob Johnson',
-            userAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-            text: 'This is gorgeous! Where was this taken?',
-            timestamp: '2025-08-15T11:15:00Z'
-          }
-        ],
-        timestamp: '2025-08-15T09:45:00Z'
-      },
-      {
-        id: 'p2',
-        authorId: 'sample_user_2',
-        authorName: 'Bob Johnson',
-        authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-        imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
-        caption: 'Morning coffee and good vibes ☕️ Ready to tackle the day!',
-        likes: ['u456', 'u101'],
-        comments: [
-          {
-            id: 'c3',
-            userId: 'u456',
-            userName: 'Alice Smith',
-            userAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-            text: 'Coffee goals! ☕️',
-            timestamp: '2025-08-14T08:20:00Z'
-          }
-        ],
-        timestamp: '2025-08-14T08:00:00Z'
-      },
-      {
-        id: 'p3',
-        authorId: 'sample_user_3',
-        authorName: 'Charlie Davis',
-        authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-        imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
-        caption: 'Weekend adventures in the city! 🏙️ Love exploring new places',
-        likes: ['u123', 'u456'],
-        comments: [
-          {
-            id: 'c4',
-            userId: 'u123',
-            userName: 'Guest User',
-            userAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-            text: 'Looks amazing! Which city is this?',
-            timestamp: '2025-08-13T15:45:00Z'
-          }
-        ],
-        timestamp: '2025-08-13T15:30:00Z'
-      },
-      {
-        id: 'p4',
-        authorId: 'sample_user_4',
-        authorName: 'Diana Martinez',
-        authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-        imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
-        caption: 'Golden hour magic ✨ Sometimes the best moments are unplanned',
-        likes: ['u789', 'u101', 'u456'],
-        comments: [],
-        timestamp: '2025-08-12T18:20:00Z'
-      },
-      {
-        id: 'p5',
-        authorId: 'sample_user_5',
-        authorName: 'Emma Wilson',
-        authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-        imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
-        caption: 'Just finished my morning workout! 💪 Feeling energized and ready for the day',
-        likes: ['u123'],
-        comments: [
-          {
-            id: 'c5',
-            userId: 'u789',
-            userName: 'Bob Johnson',
-            userAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-            text: 'Keep it up! 💪',
-            timestamp: '2025-08-11T07:15:00Z'
-          },
-          {
-            id: 'c6',
-            userId: 'u456',
-            userName: 'Alice Smith',
-            userAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
-            text: 'Inspiring! What workout did you do?',
-            timestamp: '2025-08-11T07:30:00Z'
-          }
-        ],
-        timestamp: '2025-08-11T07:00:00Z'
-      }
-    ];
-
-    // Load saved likes and comments from localStorage
-    const globalLikes = JSON.parse(localStorage.getItem('globalLikes') || '{}');
-    const globalComments = JSON.parse(localStorage.getItem('globalComments') || '{}');
-
-    // Add isLikedByCurrentUser property and apply saved data
-    const postsWithLikeStatus = mockPosts.map(post => {
-      const savedLikes = globalLikes[post.id] || post.likes;
-      const savedComments = globalComments[post.id] || post.comments;
+    const initializePosts = async () => {
+      setLoading(true);
+      setError(null);
       
-      return {
-        ...post,
-        likes: savedLikes,
-        comments: savedComments,
-        isLikedByCurrentUser: savedLikes.includes(mockUser.uid)
-      };
-    });
+      try {
+        // Define mock posts (these will be stored in Firestore)
+        const mockPosts: FirestorePost[] = [
+          {
+            id: 'p1',
+            authorId: 'sample_user_1',
+            authorName: 'Alice Smith',
+            authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
+            imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
+            caption: 'Beautiful sunset from my balcony! Nature never fails to amaze me 🌅',
+            timestamp: '2025-08-15T09:45:00Z'
+          },
+          {
+            id: 'p2',
+            authorId: 'sample_user_2',
+            authorName: 'Bob Johnson',
+            authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
+            imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
+            caption: 'Morning coffee and good vibes ☕️ Ready to tackle the day!',
+            timestamp: '2025-08-14T08:00:00Z'
+          },
+          {
+            id: 'p3',
+            authorId: 'sample_user_3',
+            authorName: 'Charlie Davis',
+            authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
+            imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
+            caption: 'Weekend adventures in the city! 🏙️ Love exploring new places',
+            timestamp: '2025-08-13T15:30:00Z'
+          },
+          {
+            id: 'p4',
+            authorId: 'sample_user_4',
+            authorName: 'Diana Martinez',
+            authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
+            imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
+            caption: 'Golden hour magic ✨ Sometimes the best moments are unplanned',
+            timestamp: '2025-08-12T18:20:00Z'
+          },
+          {
+            id: 'p5',
+            authorId: 'sample_user_5',
+            authorName: 'Emma Wilson',
+            authorAvatar: 'https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg',
+            imageUrl: 'https://images.pexels.com/photos/33498261/pexels-photo-33498261.jpeg',
+            caption: 'Just finished my morning workout! 💪 Feeling energized and ready for the day',
+            timestamp: '2025-08-11T07:00:00Z'
+          }
+        ];
 
-    setPosts(postsWithLikeStatus);
+        // Initialize posts in Firestore
+        await Promise.all(mockPosts.map(post => initializePost(post)));
+
+        // Load posts with real-time likes and comments from Firestore
+        const postsWithData = await Promise.all(
+          mockPosts.map(async (post) => {
+            const [likesData, commentsData] = await Promise.all([
+              getPostLikes(post.id),
+              getPostComments(post.id)
+            ]);
+
+            return {
+              ...post,
+              likes: likesData.likes,
+              comments: commentsData.comments.map(comment => ({
+                id: comment.id,
+                userId: comment.userId,
+                userName: comment.userName,
+                userAvatar: comment.userAvatar,
+                text: comment.text,
+                timestamp: comment.timestamp?.toDate ? comment.timestamp.toDate().toISOString() : comment.timestamp
+              })),
+              isLikedByCurrentUser: likesData.likes.includes(mockUser.uid)
+            };
+          })
+        );
+
+        setPosts(postsWithData);
+
+        // Set up real-time listeners for each post
+        const unsubscribers: (() => void)[] = [];
+        
+        mockPosts.forEach((post) => {
+          // Listen to likes changes
+          const likesUnsubscriber = subscribeToPostLikes(post.id, (likesData) => {
+            setPosts(prevPosts => 
+              prevPosts.map(p => 
+                p.id === post.id 
+                  ? { 
+                      ...p, 
+                      likes: likesData.likes,
+                      isLikedByCurrentUser: likesData.likes.includes(mockUser.uid)
+                    }
+                  : p
+              )
+            );
+          });
+
+          // Listen to comments changes
+          const commentsUnsubscriber = subscribeToPostComments(post.id, (commentsData) => {
+            setPosts(prevPosts => 
+              prevPosts.map(p => 
+                p.id === post.id 
+                  ? { 
+                      ...p, 
+                      comments: commentsData.comments.map(comment => ({
+                        id: comment.id,
+                        userId: comment.userId,
+                        userName: comment.userName,
+                        userAvatar: comment.userAvatar,
+                        text: comment.text,
+                        timestamp: comment.timestamp?.toDate ? comment.timestamp.toDate().toISOString() : comment.timestamp
+                      }))
+                    }
+                  : p
+              )
+            );
+          });
+
+          unsubscribers.push(likesUnsubscriber, commentsUnsubscriber);
+        });
+
+        // Cleanup function
+        return () => {
+          unsubscribers.forEach(unsubscribe => unsubscribe());
+        };
+      } catch (err) {
+        console.error('Error initializing posts:', err);
+        setError('Failed to load posts: ' + (err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializePosts();
   }, []);
 
-  const toggleLike = (postId: string) => {
-    // Update local state immediately (optimistic update)
-    setPosts(prevPosts => 
-      prevPosts.map(post => {
-        if (post.id === postId) {
-          const hasLiked = post.likes.includes(mockUser.uid);
-          const newLikes = hasLiked 
-            ? post.likes.filter(uid => uid !== mockUser.uid)
-            : [...post.likes, mockUser.uid];
-          
-          // Also save to localStorage for persistence
-          const globalLikes = JSON.parse(localStorage.getItem('globalLikes') || '{}');
-          globalLikes[postId] = newLikes;
-          localStorage.setItem('globalLikes', JSON.stringify(globalLikes));
-          
-          return {
-            ...post,
-            likes: newLikes,
-            isLikedByCurrentUser: !hasLiked
-          };
-        }
-        return post;
-      })
-    );
+  const toggleLike = async (postId: string) => {
+    try {
+      setError(null);
+      
+      // Optimistic update - immediately update UI
+      setPosts(prevPosts => 
+        prevPosts.map(post => {
+          if (post.id === postId) {
+            const hasLiked = post.likes.includes(mockUser.uid);
+            const newLikes = hasLiked 
+              ? post.likes.filter(uid => uid !== mockUser.uid)
+              : [...post.likes, mockUser.uid];
+            
+            return {
+              ...post,
+              likes: newLikes,
+              isLikedByCurrentUser: !hasLiked
+            };
+          }
+          return post;
+        })
+      );
+
+      // Update Firestore (real-time listeners will sync this across all users)
+      await togglePostLike(postId, mockUser.uid);
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      setError('Failed to update like: ' + (err as Error).message);
+      
+      // Revert optimistic update on error
+      setPosts(prevPosts => 
+        prevPosts.map(post => {
+          if (post.id === postId) {
+            const hasLiked = post.likes.includes(mockUser.uid);
+            const revertedLikes = hasLiked 
+              ? post.likes.filter(uid => uid !== mockUser.uid)
+              : [...post.likes, mockUser.uid];
+            
+            return {
+              ...post,
+              likes: revertedLikes,
+              isLikedByCurrentUser: !hasLiked
+            };
+          }
+          return post;
+        })
+      );
+    }
   };
 
-  const addComment = (postId: string, text: string) => {
+  const addComment = async (postId: string, text: string) => {
     if (!text.trim()) {
       setError('Comment cannot be empty');
       return;
     }
 
-    const newComment: SimpleComment = {
-      id: `c${Date.now()}`,
-      userId: mockUser.uid,
-      userName: mockUser.username,
-      userAvatar: mockUser.avatar,
-      text: text.trim(),
-      timestamp: new Date().toISOString()
-    };
+    try {
+      setError(null);
+      
+      const newComment: SimpleComment = {
+        id: `c${Date.now()}_temp`, // Temporary ID for optimistic update
+        userId: mockUser.uid,
+        userName: mockUser.username,
+        userAvatar: mockUser.avatar,
+        text: text.trim(),
+        timestamp: new Date().toISOString()
+      };
 
-    setPosts(prevPosts =>
-      prevPosts.map(post => {
-        if (post.id === postId) {
-          const updatedComments = [...post.comments, newComment];
-          
-          // Save to localStorage for persistence
-          const globalComments = JSON.parse(localStorage.getItem('globalComments') || '{}');
-          globalComments[postId] = updatedComments;
-          localStorage.setItem('globalComments', JSON.stringify(globalComments));
-          
-          return {
-            ...post,
-            comments: updatedComments
-          };
-        }
-        return post;
-      })
-    );
+      // Optimistic update - immediately show comment in UI
+      setPosts(prevPosts =>
+        prevPosts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: [...post.comments, newComment]
+            };
+          }
+          return post;
+        })
+      );
 
-    setError(null);
+      // Add comment to Firestore (real-time listeners will sync this across all users)
+      await addPostComment(
+        postId, 
+        mockUser.uid, 
+        mockUser.username, 
+        mockUser.avatar, 
+        text.trim()
+      );
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      setError('Failed to add comment: ' + (err as Error).message);
+      
+      // Revert optimistic update on error
+      setPosts(prevPosts =>
+        prevPosts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: post.comments.filter(comment => !comment.id.includes('_temp'))
+            };
+          }
+          return post;
+        })
+      );
+    }
   };
 
   const value: PostsContextType = {
     posts,
     toggleLike,
     addComment,
-    error
+    error,
+    loading
   };
 
   return (

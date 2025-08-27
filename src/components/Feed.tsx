@@ -1,9 +1,10 @@
 import React from "react";
 import { PostCard } from "./PostCard";
+import { PostSkeletonList } from "./PostSkeleton";
 import { usePosts } from "../context/PostsContext";
 
 export const Feed: React.FC = () => {
-  const { posts, error } = usePosts();
+  const { posts, error, loading } = usePosts();
 
   if (error) {
     return (
@@ -29,7 +30,9 @@ export const Feed: React.FC = () => {
 
       {/* Feed Content */}
       <main className="max-w-md mx-auto">
-        {posts.length === 0 ? (
+        {loading ? (
+          <PostSkeletonList count={5} />
+        ) : posts.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
