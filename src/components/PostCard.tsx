@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { FirestorePost } from "../firebase/posts";
 import {
   togglePostLike,
@@ -44,7 +44,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   });
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [showAllComments, setShowAllComments] = useState(false);
+  
+  const commentInputRef = useRef<HTMLInputElement>(null);
   const currentUser = getCurrentUser();
   const isLiked = likes.likes.includes(currentUser.id);
 
@@ -71,19 +73,28 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
     setIsSubmitting(true);
     try {
-      await addPostComment(
-        post.id,
-        currentUser.id,
-        currentUser.username,
-        currentUser.avatar,
-        newComment
-      );
-      setNewComment("");
+             await addPostComment(
+         post.id,
+         currentUser.id,
+         currentUser.username,
+         currentUser.avatar,
+         newComment
+       );
+       setNewComment("");
+       // Show the new comment by keeping comments expanded if they were expanded
+       if (!showAllComments && comments.commentCount >= 3) {
+         setShowAllComments(true);
+       }
     } catch (error) {
       console.error("Error adding comment:", error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCommentClick = () => {
+    commentInputRef.current?.focus();
+    commentInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   return (
@@ -149,7 +160,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </svg>
         </button>
 
-        <button className="flex items-center space-x-2">
+        <button onClick={handleCommentClick} className="flex items-center space-x-2">
           <svg
             className="w-6 h-6 text-gray-900"
             fill="none"
@@ -218,22 +229,27 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
       {/* Comments */}
       <div className="px-4 pb-4">
-        {comments.commentCount > 0 && (
+        {comments.commentCount > 3 && !showAllComments && (
           <button
-            className="text-sm text-gray-500 mb-2 block"
-            onClick={() => {
-              // Could implement "View all comments" functionality here
-            }}
+            className="text-sm text-gray-500 mb-2 block hover:text-gray-700"
+            onClick={() => setShowAllComments(true)}
           >
-            {comments.commentCount > 3
-              ? `View all ${comments.commentCount} comments`
-              : `View ${comments.commentCount === 1 ? "comment" : "comments"}`}
+            View all {comments.commentCount} comments
           </button>
         )}
 
-        {/* Show last few comments */}
+        {comments.commentCount > 3 && showAllComments && (
+          <button
+            className="text-sm text-gray-500 mb-2 block hover:text-gray-700"
+            onClick={() => setShowAllComments(false)}
+          >
+            Hide comments
+          </button>
+        )}
+
+        {/* Show comments */}
         <div className="space-y-1">
-          {comments.comments.slice(-3).map((comment) => (
+          {(showAllComments ? comments.comments : comments.comments.slice(-3)).map((comment) => (
             <div key={comment.id} className="flex space-x-2 items-center">
               <span className="font-semibold text-sm text-gray-900 mr-2">
                 {comment.userName}
@@ -258,6 +274,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             className="w-6 h-6 rounded-full object-cover flex-shrink-0"
           />
           <input
+            ref={commentInputRef}
             type="text"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
