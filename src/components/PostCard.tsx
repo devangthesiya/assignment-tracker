@@ -1,69 +1,84 @@
-import React, { useState } from "react";
-import { usePosts } from "../context/PostsContext";
-
-interface Post {
-  id: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar: string;
-  imageUrl: string;
-  caption: string;
-  likes: string[];
-  comments: Array<{
-    id: string;
-    userId: string;
-    userName: string;
-    userAvatar: string;
-    text: string;
-    timestamp: string;
-  }>;
-  timestamp: string;
-  isLikedByCurrentUser?: boolean;
-}
+import React, { useState, useEffect } from "react";
+import type { FirestorePost } from "../firebase/posts";
+import {
+  togglePostLike,
+  addPostComment,
+  subscribeToPostLikes,
+  subscribeToPostComments,
+  type PostLikes,
+  type PostComments,
+} from "../firebase/posts";
+import { getCurrentUser } from "../utils/userManager";
 
 interface PostCardProps {
-  post: Post;
+  post: FirestorePost;
 }
 
+const formatTimestamp = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInDays > 0) {
+    return `${diffInDays}d`;
+  } else if (diffInHours > 0) {
+    return `${diffInHours}h`;
+  } else {
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    return diffInMinutes > 0 ? `${diffInMinutes}m` : "now";
+  }
+};
+
 export const PostCard: React.FC<PostCardProps> = ({ post }) => {
-  const { toggleLike, addComment, currentUser } = usePosts();
-  const [showComments, setShowComments] = useState(false);
-  const [showAddComment, setShowAddComment] = useState(false);
-  const [commentText, setCommentText] = useState("");
+  const [likes, setLikes] = useState<PostLikes>({
+    postId: post.id,
+    likes: [],
+    likeCount: 0,
+  });
+  const [comments, setComments] = useState<PostComments>({
+    postId: post.id,
+    comments: [],
+    commentCount: 0,
+  });
+  const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const formatTimestamp = (timestamp: any) => {
-    if (!timestamp) return "Just now";
+  const currentUser = getCurrentUser();
+  const isLiked = likes.likes.includes(currentUser.id);
 
-    // Handle Firestore Timestamp
-    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  useEffect(() => {
+    const unsubscribeLikes = subscribeToPostLikes(post.id, setLikes);
+    const unsubscribeComments = subscribeToPostComments(post.id, setComments);
 
-    if (diffInHours < 1) return "Just now";
-    if (diffInHours < 24) return `${diffInHours}h`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d`;
+    return () => {
+      unsubscribeLikes();
+      unsubscribeComments();
+    };
+  }, [post.id]);
+
+  const handleLike = async () => {
+    try {
+      await togglePostLike(post.id, currentUser.id);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
   };
 
-  const handleLike = () => {
-    toggleLike(post.id);
-  };
-
-  const handleComment = () => {
-    setShowAddComment(!showAddComment);
-  };
-
-  const handleSubmitComment = async () => {
-    if (!commentText.trim() || isSubmitting) return;
+  const handleAddComment = async () => {
+    if (!newComment.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      await addComment(post.id, commentText);
-      setCommentText("");
-      setShowAddComment(false);
-      setShowComments(true); // Show comments after adding one
+      await addPostComment(
+        post.id,
+        currentUser.id,
+        currentUser.username,
+        currentUser.avatar,
+        newComment
+      );
+      setNewComment("");
     } catch (error) {
       console.error("Error adding comment:", error);
     } finally {
@@ -72,7 +87,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+    <div className="bg-white border-b border-gray-200">
       {/* Post Header */}
       <div className="flex items-center p-4">
         <img
@@ -81,16 +96,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           className="w-8 h-8 rounded-full object-cover"
         />
         <div className="ml-3 flex-1">
-          <p className="font-semibold text-sm text-gray-900 dark:text-white">
+          <p className="font-semibold text-sm text-gray-900">
             {post.authorName}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500">
             {formatTimestamp(post.timestamp)}
           </p>
         </div>
         <button className="p-1">
           <svg
-            className="w-6 h-6 text-gray-400 dark:text-gray-500"
+            className="w-6 h-6 text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -115,64 +130,62 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center space-x-4">
-          <button onClick={handleLike} className="focus:outline-none">
-            <svg
-              className={`w-6 h-6 ${
-                post.isLikedByCurrentUser
-                  ? "text-red-500 fill-current"
-                  : "text-gray-900 dark:text-gray-100"
-              }`}
-              fill={post.isLikedByCurrentUser ? "currentColor" : "none"}
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-          </button>
-
-          <button onClick={handleComment} className="focus:outline-none">
-            <svg
-              className="w-6 h-6 text-gray-900 dark:text-gray-100"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a9.863 9.863 0 01-4.906-1.294l-3.823 1.024a.75.75 0 01-.939-.939l1.024-3.823A9.863 9.863 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z"
-              />
-            </svg>
-          </button>
-
-          <button className="focus:outline-none">
-            <svg
-              className="w-6 h-6 text-gray-900 dark:text-gray-100"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <button className="focus:outline-none">
+      <div className="flex items-center p-4 space-x-4">
+        <button onClick={handleLike} className="flex items-center space-x-2">
           <svg
-            className="w-6 h-6 text-gray-900 dark:text-gray-100"
+            className={`w-6 h-6 ${
+              isLiked ? "text-red-500 fill-current" : "text-gray-900"
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
+          </svg>
+        </button>
+
+        <button className="flex items-center space-x-2">
+          <svg
+            className="w-6 h-6 text-gray-900"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
+          </svg>
+        </button>
+
+        <button className="flex items-center space-x-2">
+          <svg
+            className="w-6 h-6 text-gray-900"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+            />
+          </svg>
+        </button>
+
+        <div className="flex-1"></div>
+
+        <button className="flex items-center space-x-2">
+          <svg
+            className="w-6 h-6 text-gray-900"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -187,98 +200,85 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </button>
       </div>
 
-      {/* Post Content */}
-      <div className="px-4 pb-4">
-        {/* Like Count */}
-        {post.likes.length > 0 && (
-          <p className="font-semibold text-sm text-gray-900 dark:text-white mb-2">
-            {post.likes.length} {post.likes.length === 1 ? "like" : "likes"}
+      {/* Likes and Caption */}
+      <div className="px-4 pb-2">
+        {likes.likeCount > 0 && (
+          <p className="font-semibold text-sm text-gray-900 mb-2">
+            {likes.likeCount} {likes.likeCount === 1 ? "like" : "likes"}
           </p>
         )}
 
-        {/* Caption */}
-        <div className="mb-2">
-          <span className="font-semibold text-sm text-gray-900 dark:text-white mr-2">
+        <div className="space-y-1">
+          <span className="font-semibold text-sm text-gray-900 mr-2">
             {post.authorName}
           </span>
-          <span className="text-sm text-gray-900 dark:text-gray-200">
-            {post.caption}
-          </span>
+          <span className="text-sm text-gray-900">{post.caption}</span>
         </div>
+      </div>
 
-        {/* Comments Preview */}
-        {post.comments.length > 0 && (
+      {/* Comments */}
+      <div className="px-4 pb-4">
+        {comments.commentCount > 0 && (
           <button
-            onClick={() => setShowComments(!showComments)}
-            className="text-sm text-gray-500 dark:text-gray-400 mb-2 block"
+            className="text-sm text-gray-500 mb-2 block"
+            onClick={() => {
+              // Could implement "View all comments" functionality here
+            }}
           >
-            {showComments
-              ? "Hide comments"
-              : `View all ${post.comments.length} comments`}
+            {comments.commentCount > 3
+              ? `View all ${comments.commentCount} comments`
+              : `View ${comments.commentCount === 1 ? "comment" : "comments"}`}
           </button>
         )}
 
-        {/* Comments List */}
-        {showComments && (
-          <div className="space-y-2 mb-3">
-            {post.comments.map((comment) => (
-              <div key={comment.id} className="flex items-start space-x-2">
-                <img
-                  src={comment.userAvatar}
-                  alt={comment.userName}
-                  className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-baseline">
-                    <span className="font-semibold text-sm text-gray-900 dark:text-white mr-2">
-                      {comment.userName}
-                    </span>
-                    <span className="text-sm text-gray-900 dark:text-gray-200 break-words">
-                      {comment.text}
-                    </span>
-                  </div>
-                  <div className="flex items-center mt-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatTimestamp(comment.timestamp)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Show last few comments */}
+        <div className="space-y-1">
+          {comments.comments.slice(-3).map((comment) => (
+            <div key={comment.id} className="flex space-x-2 items-center">
+              <span className="font-semibold text-sm text-gray-900 mr-2">
+                {comment.userName}
+              </span>
+              <span className="text-sm text-gray-900 break-words">
+                {comment.text}
+              </span>
+              <span className="text-xs text-gray-500">
+                {formatTimestamp(
+                  comment.timestamp?.toDate?.() || comment.timestamp
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
 
         {/* Add Comment */}
-        {showAddComment && (
-          <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.username}
-              className="w-6 h-6 rounded-full object-cover"
-            />
-            <div className="flex-1 flex items-center space-x-2">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-1 text-sm bg-transparent border-none outline-none placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white"
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    handleSubmitComment();
-                  }
-                }}
-              />
-              <button
-                onClick={handleSubmitComment}
-                disabled={!commentText.trim() || isSubmitting}
-                className="text-sm font-semibold text-blue-500 dark:text-blue-400 disabled:text-gray-400 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Posting..." : "Post"}
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100">
+          <img
+            src={currentUser.avatar}
+            alt={currentUser.username}
+            className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+          />
+          <input
+            type="text"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment..."
+            className="flex-1 text-sm bg-transparent border-none outline-none placeholder-gray-500 text-gray-900"
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                handleAddComment();
+              }
+            }}
+          />
+          {newComment.trim() && (
+            <button
+              onClick={handleAddComment}
+              disabled={isSubmitting}
+              className="text-sm font-semibold text-blue-500 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              Post
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

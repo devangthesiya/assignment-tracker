@@ -1,7 +1,6 @@
 import React from "react";
 import { PostCard } from "./PostCard";
 import { PostSkeletonList } from "./PostSkeleton";
-import { DarkModeToggle } from "./DarkModeToggle";
 import { usePosts } from "../context/PostsContext";
 
 export const Feed: React.FC = () => {
@@ -19,13 +18,12 @@ export const Feed: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 transition-colors duration-300">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-md mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sociogram</h1>
-            <DarkModeToggle />
+          <div className="flex items-center justify-center">
+            <h1 className="text-2xl font-bold text-gray-900">Sociogram</h1>
           </div>
         </div>
       </header>
