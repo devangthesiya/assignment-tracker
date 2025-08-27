@@ -72,7 +72,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
       {/* Post Header */}
       <div className="flex items-center p-4">
         <img
@@ -81,16 +81,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           className="w-8 h-8 rounded-full object-cover"
         />
         <div className="ml-3 flex-1">
-          <p className="font-semibold text-sm text-gray-900">
+          <p className="font-semibold text-sm text-gray-900 dark:text-white">
             {post.authorName}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {formatTimestamp(post.timestamp)}
           </p>
         </div>
         <button className="p-1">
           <svg
-            className="w-6 h-6 text-gray-400"
+            className="w-6 h-6 text-gray-400 dark:text-gray-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -122,7 +122,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               className={`w-6 h-6 ${
                 post.isLikedByCurrentUser
                   ? "text-red-500 fill-current"
-                  : "text-gray-900"
+                  : "text-gray-900 dark:text-gray-100"
               }`}
               fill={post.isLikedByCurrentUser ? "currentColor" : "none"}
               stroke="currentColor"
@@ -139,7 +139,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
           <button onClick={handleComment} className="focus:outline-none">
             <svg
-              className="w-6 h-6 text-gray-900"
+              className="w-6 h-6 text-gray-900 dark:text-gray-100"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -155,7 +155,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
           <button className="focus:outline-none">
             <svg
-              className="w-6 h-6 text-gray-900"
+              className="w-6 h-6 text-gray-900 dark:text-gray-100"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -172,7 +172,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
         <button className="focus:outline-none">
           <svg
-            className="w-6 h-6 text-gray-900"
+            className="w-6 h-6 text-gray-900 dark:text-gray-100"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -191,24 +191,24 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       <div className="px-4 pb-4">
         {/* Like Count */}
         {post.likes.length > 0 && (
-          <p className="font-semibold text-sm text-gray-900 mb-2">
+          <p className="font-semibold text-sm text-gray-900 dark:text-white mb-2">
             {post.likes.length} {post.likes.length === 1 ? "like" : "likes"}
           </p>
         )}
 
         {/* Caption */}
         <div className="mb-2">
-          <span className="font-semibold text-sm text-gray-900 mr-2">
+          <span className="font-semibold text-sm text-gray-900 dark:text-white mr-2">
             {post.authorName}
           </span>
-          <span className="text-sm text-gray-900">{post.caption}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-200">{post.caption}</span>
         </div>
 
         {/* Comments Preview */}
         {post.comments.length > 0 && (
           <button
             onClick={() => setShowComments(!showComments)}
-            className="text-sm text-gray-500 mb-2 block"
+            className="text-sm text-gray-500 dark:text-gray-400 mb-2 block"
           >
             {showComments
               ? "Hide comments"
@@ -228,15 +228,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-baseline">
-                    <span className="font-semibold text-sm text-gray-900 mr-2">
+                    <span className="font-semibold text-sm text-gray-900 dark:text-white mr-2">
                       {comment.userName}
                     </span>
-                    <span className="text-sm text-gray-900 break-words">
+                    <span className="text-sm text-gray-900 dark:text-gray-200 break-words">
                       {comment.text}
                     </span>
                   </div>
                   <div className="flex items-center mt-1">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {formatTimestamp(comment.timestamp)}
                     </span>
                   </div>
@@ -248,7 +248,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
         {/* Add Comment */}
         {showAddComment && (
-          <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
             <img
               src="https://images.pexels.com/photos/8721322/pexels-photo-8721322.jpeg"
               alt="Your avatar"
@@ -260,7 +260,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add a comment..."
-                className="flex-1 text-sm bg-transparent border-none outline-none placeholder-gray-500"
+                className="flex-1 text-sm bg-transparent border-none outline-none placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white"
                 onKeyPress={(e) => {
                   if (e.key === "Enter") {
                     handleSubmitComment();
@@ -270,7 +270,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               <button
                 onClick={handleSubmitComment}
                 disabled={!commentText.trim() || isSubmitting}
-                className="text-sm font-semibold text-blue-500 disabled:text-gray-400 disabled:cursor-not-allowed"
+                className="text-sm font-semibold text-blue-500 dark:text-blue-400 disabled:text-gray-400 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Posting..." : "Post"}
               </button>
