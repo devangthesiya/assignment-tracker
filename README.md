@@ -9,7 +9,6 @@ A modern social media feed built with React, TypeScript, Tailwind CSS, and Fireb
 - 💬 **Real-time Comments** - Live comment updates that sync instantly
 - 🔥 **Firebase Firestore** - Cloud database with real-time listeners
 - ⚡ **Skeleton Loading** - Professional loading states with smooth animations
-- 🌙 **Dark Mode** - Beautiful dark/light theme toggle with system preference detection
 - 🎭 **Multi-User System** - 10 unique users with session-based assignment
 - 🌐 **Cross-Session Sync** - Changes appear instantly in all open browser windows
 - 💾 **Cloud Persistence** - Data stored securely in Firebase
@@ -66,8 +65,7 @@ service cloud.firestore {
 2. **Like Posts** - Click the ❤️ icon to like/unlike (syncs globally in real-time)
 3. **View Comments** - Click "View all X comments" to expand comment threads
 4. **Add Comments** - Click comment icon, type, and press Enter
-5. **Toggle Dark Mode** - Click the 🌙/☀️ button in the header to switch themes
-6. **Test Multi-User Experience** - Open multiple browser windows(incognito) to simulate different users!
+5. **Test Multi-User Experience** - Open multiple browser windows(incognito) to simulate different users!
 
 ### Multi-User Session System 🎭
 
@@ -96,11 +94,9 @@ src/
 │   ├── Feed.tsx          # Main feed container with skeleton loading
 │   ├── PostCard.tsx      # Individual post component
 │   ├── PostSkeleton.tsx  # Loading skeleton components
-│   ├── DarkModeToggle.tsx # Dark/light mode toggle button
 │   └── index.ts          # Component exports
 ├── context/
-│   ├── PostsContext.tsx  # Global state management with Firestore
-│   └── ThemeContext.tsx  # Dark mode theme management
+│   └── PostsContext.tsx  # Global state management with Firestore
 ├── firebase/
 │   ├── config.ts         # Firebase configuration
 │   ├── posts.ts          # Firestore operations for posts, likes, comments
@@ -119,10 +115,9 @@ src/
 - ✅ **Real-time Synchronization** - Instant updates across all browser sessions
 - ✅ **Global Likes** - Like counts sync globally via Firestore
 - ✅ **Global Comments** - Comments appear instantly for all users
-- ✅ **Dark/Light Mode** - Theme toggle with smooth animations and persistence
 - ✅ **Skeleton Loading** - Professional loading states while fetching data
 - ✅ **Optimistic Updates** - Immediate UI feedback with error handling
-- ✅ **Clean UI** - Instagram-inspired mobile-first design
+- ✅ **Clean UI** - Instagram-inspired mobile-first design with light theme
 - ✅ **Error Handling** - Graceful fallbacks for network issues
 
 ## 🔧 Architecture
